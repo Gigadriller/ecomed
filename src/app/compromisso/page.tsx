@@ -227,9 +227,8 @@ export default function CompromissoPage() {
           <div className="container mx-auto max-w-4xl px-4 text-center">
             <h2 className="mb-4 font-sans text-3xl font-bold text-gray-900">Compromisso que vira ação</h2>
             <p className="mx-auto mb-8 max-w-2xl text-gray-600">
-              O EcoMed nasceu como projeto acadêmico colaborativo em 2026 e é construído por
-              aproximadamente 70 estudantes. Nosso foco é gerar impacto ambiental real com uma
-              plataforma gratuita, aberta e útil para toda a população.
+              O EcoMed é uma iniciativa open source focada em gerar impacto ambiental real
+              com uma plataforma gratuita, aberta e útil para toda a população brasileira.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link

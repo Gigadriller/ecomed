@@ -216,7 +216,7 @@ export default async function FeedbackPage() {
             <li>Revisar top 5 respostas com 👎 e classificar: alucinação / genérica / incorreta</li>
             <li>Verificar RAG hit rate no dashboard da IA</li>
             <li>Verificar se há incidentes não tratados</li>
-            <li>Anotar ações necessárias no OpenProject</li>
+            <li>Registrar ações de melhoria no backlog</li>
           </ul>
         </CardContent>
       </Card>

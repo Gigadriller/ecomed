@@ -28,8 +28,8 @@ const PARTNER_TYPES = [
     title: "Escolas e Universidades",
     color: "#3E8C8C",
     offer:
-      "Quizzes educativos prontos para aula, desafios entre turmas com ranking, certificados para alunos, dados para pesquisa acadêmica.",
-    ask: "Alunos como usuários, validação acadêmica, contribuições open source.",
+      "Quizzes educativos prontos para uso, missões ambientais com ranking, dados para pesquisa acadêmica.",
+    ask: "Estudantes como usuários, validação acadêmica, contribuições open source.",
     revenue: "Gratuito (troca de valor educacional).",
     cta: "Leve o EcoMed para sua escola",
   },
@@ -78,7 +78,7 @@ const FAQS = [
   },
   {
     q: "O EcoMed é confiável?",
-    a: "Sim. Somos open source (código auditável no GitHub), LGPD compliant, com IA local (dados não saem do servidor) e orientação do Prof. Ivon Matos.",
+    a: "Sim. Somos open source (código auditável no GitHub), LGPD compliant e com IA local (dados não saem do servidor).",
   },
 ];
 

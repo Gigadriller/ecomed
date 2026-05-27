@@ -292,20 +292,20 @@ export default function SobrePage() {
               Nossa equipe
             </h2>
             <p className="text-base text-gray-600 leading-relaxed mb-8 max-w-xl">
-              Projeto interdisciplinar coordenado pelo Prof. Ivon Matos,
-              desenvolvido por alunos da Escola Técnica Estadual Ilda Vieira Vilela.
+              Uma equipe multidisciplinar unida pelo propósito de tornar o descarte correto
+              de medicamentos acessível a todos os brasileiros.
             </p>
             <div className="mt-8 bg-[#1A736A] rounded-2xl px-7 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <div className="text-lg font-bold text-white">
-                  Coordenação: Prof. Ivon Matos
+                  EcoMed
                 </div>
                 <div className="text-sm text-[#D9D6D0]">
-                  Escola Técnica Estadual Ilda Vieira Vilela | Projeto Interdisciplinar 2026
+                  Tecnologia a serviço do meio ambiente e da saúde pública
                 </div>
               </div>
               <div className="text-sm text-eco-lime font-medium sm:text-right">
-                12 grupos | 196+ tarefas | OpenProject
+                Open Source · LGPD Compliant · IA Local
               </div>
             </div>
           </div>

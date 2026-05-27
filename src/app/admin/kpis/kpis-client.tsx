@@ -453,7 +453,7 @@ function TabSocial({ d }: { d: KpiData }) {
 function TabTasks({ d }: { d: KpiData }) {
   return (
     <>
-      <SectionHeader icon="📋" title="Progresso do Projeto (OpenProject)" />
+      <SectionHeader icon="📋" title="Progresso do Projeto" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
         <Card>
           <div style={{ fontSize: 11, color: colors.gray, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Distribuição de Tarefas</div>

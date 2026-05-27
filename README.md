@@ -29,7 +29,7 @@ O EcoMed resolve isso com três pilares:
 | 🤖 **EcoBot (Chat com IA)** | Tire dúvidas sobre descarte 24h. RAG com base de conhecimento local, guardrails de 5 camadas e LLM via Groq. |
 | 🪙 **EcoCoins (Gamificação)** | Ganhe EcoCoins por cada ação sustentável. Suba de nível, complete missões e troque por recompensas. |
 
-> **Projeto acadêmico interdisciplinar** coordenado pelo Prof. Ivon Matos — 70 alunos, 3 turmas, 12 grupos.
+> Plataforma open source para descarte correto de medicamentos no Brasil.
 
 ---
 
@@ -469,15 +469,15 @@ O EcoMed está alinhado com **6 Objetivos de Desenvolvimento Sustentável** da O
 | **3** Saúde e Bem-Estar | Reduz contaminação farmacêutica na água → menos doenças |
 | **4** Educação de Qualidade | Artigos + quizzes + IA educativa acessível |
 | **6** Água Limpa | Cada descarte correto evita a contaminação de até 450.000L |
-| **9** Inovação e Infraestrutura | IA local + PWA open source + projeto acadêmico |
+| **9** Inovação e Infraestrutura | IA local + PWA open source + arquitetura moderna |
 | **12** Consumo Responsável | Logística reversa de resíduos farmacêuticos |
 | **17** Parcerias | Farmácias + UBS + escolas + governo + ONGs |
 
 ---
 
-## 👥 Equipe e Contexto Acadêmico
+## 👥 Equipe
 
-**Coordenação:** Prof. Ivon Matos — Escola Técnica Estadual
+Construído por uma equipe multidisciplinar apaixonada por tecnologia e meio ambiente.
 
 ---
 
@@ -510,6 +510,6 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 
 <div align="center">
 
-**Feito com 🌿 por 70 alunos que acreditam que tecnologia pode salvar o planeta.**
+**Feito com 🌿 por pessoas que acreditam que tecnologia pode salvar o planeta.**
 
 </div>

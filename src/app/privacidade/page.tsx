@@ -21,9 +21,8 @@ export default function PrivacidadePage() {
         <div className="prose prose-green dark:prose-invert max-w-none space-y-8">
           <p>
             A presente Política de Privacidade descreve como o <strong>EcoMed</strong> (acessível em{" "}
-            <a href="https://ecomed.eco.br">ecomed.eco.br</a>), projeto acadêmico desenvolvido sob
-            coordenação da Escola Técnica Estadual, coleta, utiliza, armazena, compartilha e protege
-            os dados pessoais dos usuários.
+            <a href="https://ecomed.eco.br">ecomed.eco.br</a>) coleta, utiliza, armazena,
+            compartilha e protege os dados pessoais dos usuários.
           </p>
           <p>
             Esta política foi elaborada em conformidade com a{" "}
