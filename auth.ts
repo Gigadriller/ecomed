@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/db/prisma";
 import { loginSchema } from "@/lib/schemas/user";
 import { creditCoins } from "@/lib/coins";
@@ -56,6 +57,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           data: { userId: user.id, balance: 0, totalEarned: 0 },
         });
         await creditCoins(user.id, "SIGNUP");
+
+        // Processar código de indicação salvo em cookie (fluxo Google OAuth)
+        try {
+          const cookieStore = await cookies();
+          const refCookie = cookieStore.get("ecomed_ref");
+          if (refCookie?.value) {
+            const referralCode = decodeURIComponent(refCookie.value);
+            const referrer = await prisma.user.findUnique({
+              where: { referralCode },
+              select: { id: true },
+            });
+            if (referrer && referrer.id !== user.id) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { referredById: referrer.id },
+              });
+              await creditCoins(referrer.id, "REFERRAL", user.id);
+            }
+          }
+        } catch {
+          // Cookie pode não estar disponível em todos os contextos — falha silenciosa
+        }
       }
 
       return true;

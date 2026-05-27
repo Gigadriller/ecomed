@@ -106,8 +106,8 @@ export function ReferralPanel({ referralCode, referidos, indicacoesConfirmadas, 
         <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
           <li>Compartilhe seu link/código com amigos</li>
           <li>Seu amigo se cadastra usando seu código</li>
-          <li>Você recebe automaticamente <strong>+10 EcoCoins</strong></li>
-          <li>Sem limite de indicações!</li>
+          <li>Você recebe automaticamente <strong>+20 EcoCoins</strong></li>
+          <li>Limite de 5 indicações por mês</li>
         </ol>
       </div>
 

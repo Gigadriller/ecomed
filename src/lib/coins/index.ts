@@ -94,6 +94,11 @@ const LIMITES_DIARIOS: Partial<Record<string, number>> = {
   REPORT_SUBMITTED: 3,
 }
 
+// ---- Limite mensal por categoria (verificado separadamente) ----
+const LIMITES_MENSAIS: Partial<Record<string, number>> = {
+  REFERRAL: 5,
+}
+
 // ---- Eventos isentos do teto diário global ----
 const ISENTO_TETO_GLOBAL = new Set([
   "SIGNUP",
@@ -101,6 +106,7 @@ const ISENTO_TETO_GLOBAL = new Set([
   "ONBOARDING_SCREENS",
   "ONBOARDING_GEO",
   "ONBOARDING_PUSH",
+  "REFERRAL",           // indicação de amigo — não deve ser bloqueada pelo teto diário
   "ADMIN_GRANT",
   "ADJUSTMENT",
   "REDEMPTION",
@@ -119,6 +125,14 @@ const COM_MULTIPLICADOR = new Set([
 ])
 
 const TETO_DIARIO_GLOBAL = 120
+
+// ---- Início do mês em UTC ----
+function inicioMesUTC(): Date {
+  const d = new Date()
+  d.setUTCDate(1)
+  d.setUTCHours(0, 0, 0, 0)
+  return d
+}
 
 // ---- Verifica teto diário global e limite por categoria; registra no tracker ----
 async function verificarERegistrar(
@@ -140,6 +154,17 @@ async function verificarERegistrar(
       where: { userId_date_category: { userId, date: hoje, category: event } },
     })
     if (catRow && catRow.count >= limite) return false
+  }
+
+  // Verificar limite mensal
+  const limiteMensal = LIMITES_MENSAIS[event]
+  if (limiteMensal !== undefined) {
+    const inicioMes = inicioMesUTC()
+    const contMes = await prisma.dailyLimitTracker.findMany({
+      where: { userId, category: event, date: { gte: inicioMes } },
+    })
+    const totalMes = contMes.reduce((s, t) => s + t.count, 0)
+    if (totalMes >= limiteMensal) return false
   }
 
   // Registrar no tracker

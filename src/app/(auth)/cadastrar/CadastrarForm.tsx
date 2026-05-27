@@ -33,6 +33,11 @@ export function CadastrarForm() {
 
   async function handleGoogle() {
     setGoogleLoading(true);
+    // Salva o código de indicação em cookie antes do redirect OAuth
+    const ref = searchParams.get("ref");
+    if (ref) {
+      document.cookie = `ecomed_ref=${encodeURIComponent(ref)};path=/;max-age=600;SameSite=Lax`;
+    }
     await signIn("google", { callbackUrl: "/app" });
   }
 
