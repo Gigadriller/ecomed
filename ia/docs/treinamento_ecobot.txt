@@ -1,3 +1,101 @@
+=== SOBRE A PLATAFORMA ECOMED ===
+
+O que é o EcoMed?
+O EcoMed (ecomed.eco.br) é uma plataforma gratuita e open source que ajuda cidadãos a descartarem medicamentos corretamente. Oferece um mapa interativo com pontos de coleta, um assistente virtual (EcoBot) para tirar dúvidas, quiz educativo, sistema de gamificação com recompensas e um ranking de impacto ambiental.
+
+O EcoMed funciona como aplicativo?
+Sim. O EcoMed é uma PWA (Progressive Web App), ou seja, funciona direto no navegador do celular sem precisar instalar pela App Store ou Google Play. Basta acessar ecomed.eco.br pelo celular e adicionar à tela inicial quando solicitado.
+
+Como faço para criar uma conta no EcoMed?
+Acesse ecomed.eco.br, clique em "Criar conta" e preencha nome, e-mail e senha. Você também pode entrar rapidamente com sua conta Google clicando em "Entrar com Google". Após o cadastro, sua conta fica ativa imediatamente.
+
+Preciso criar conta para usar o mapa?
+Não. O mapa de pontos de coleta é público e gratuito, sem necessidade de cadastro. Porém, para ganhar EcoCoins, participar de missões e acessar o ranking, é necessário criar uma conta.
+
+O EcoMed é gratuito?
+Sim, completamente gratuito para cidadãos. Não há cobranças para usar o mapa, o EcoBot, as missões ou qualquer funcionalidade da plataforma.
+
+O que são EcoCoins?
+EcoCoins são moedas virtuais do EcoMed que representam seu impacto ambiental. Você ganha EcoCoins realizando ações como: completar o cadastro, confirmar que descartou um medicamento, completar missões diárias e semanais, acertar questões no quiz, indicar amigos e participar de eventos especiais.
+
+Como ganho EcoCoins?
+Você ganha EcoCoins por diversas ações na plataforma:
+- Ao criar sua conta (bônus de boas-vindas)
+- Ao confirmar um descarte de medicamento via mapa
+- Ao completar missões diárias e semanais
+- Ao concluir o quiz educativo
+- Ao indicar amigos que se cadastram com seu link
+- Ao concluir o onboarding (tutorial inicial)
+
+Para que servem os EcoCoins?
+EcoCoins mostram seu nível de contribuição ambiental. Eles também definem sua posição no ranking de usuários mais engajados. No futuro, a plataforma planeja oferecer recompensas reais (descontos, vouchers) em parceria com farmácias e empresas sustentáveis.
+
+Como funciona o sistema de missões?
+O EcoMed oferece missões diárias e semanais que você pode completar para ganhar EcoCoins. As missões são ações concretas, como: encontrar um ponto de coleta próximo, responder ao quiz, explorar funcionalidades do app ou confirmar um descarte. Acesse "Missões" no menu inferior do app para ver as missões disponíveis.
+
+As missões se renovam?
+Sim. As missões diárias se renovam todo dia à meia-noite. As missões semanais se renovam toda segunda-feira. Se não completar uma missão hoje, uma nova missão estará disponível amanhã.
+
+Como funciona o quiz do EcoMed?
+O quiz ensina sobre descarte correto de medicamentos e meio ambiente de forma interativa. Cada pergunta correta garante EcoCoins. O quiz pode ser acessado pelo menu inferior do app ou pela seção "Quiz". As perguntas variam sobre legislação, impacto ambiental e boas práticas de descarte.
+
+Como funciona o ranking?
+O ranking mostra os usuários com mais EcoCoins na plataforma. Você pode ver sua posição e comparar seu impacto com outros cidadãos. O objetivo é incentivar o engajamento com o descarte correto de medicamentos de forma colaborativa.
+
+O que são conquistas (badges)?
+Conquistas são emblemas especiais que você desbloqueia ao atingir marcos importantes, como: primeiro descarte confirmado, completar 5 missões, atingir 100 EcoCoins, entre outros. As conquistas ficam visíveis no seu perfil.
+
+Como funciona o programa de indicação?
+Ao criar uma conta, você recebe um link ou código único de indicação. Quando um amigo se cadastra usando seu código, você ganha EcoCoins como recompensa. Acesse "Indicar amigos" no menu do app para encontrar seu link exclusivo.
+
+Como confirmar um descarte de medicamento pelo app?
+Acesse o mapa, localize um ponto de coleta próximo, toque no pin da farmácia ou UBS e clique em "Confirmar descarte". Essa ação registra sua contribuição e gera EcoCoins.
+
+Como usar o mapa do EcoMed?
+Acesse a seção "Mapa" no menu do app. O mapa exibe os pontos de coleta de medicamentos próximos à sua localização. Você pode tocar em qualquer pin para ver o endereço, horário de funcionamento e tipos de medicamentos aceitos. Também é possível buscar por CEP ou cidade.
+
+O que faço se o mapa mostrar um ponto inoperante?
+Se você chegar a uma farmácia e o ponto de coleta não estiver funcionando, pode reportar o problema diretamente pelo app. Toque no ponto no mapa e selecione "Reportar problema". Isso ajuda a manter o banco de dados atualizado para toda a comunidade.
+
+Como reportar um problema com um ponto de coleta?
+Acesse o ponto de coleta no mapa, toque nele e selecione a opção "Reportar". Você pode indicar se o ponto está fechado, sem coletor disponível ou com outro problema. Sua colaboração ajuda todos os usuários.
+
+O que é o EcoBot?
+O EcoBot é o assistente virtual do EcoMed. Ele responde dúvidas sobre descarte correto de medicamentos, legislação ambiental, impacto dos fármacos no meio ambiente e como usar a plataforma EcoMed. O EcoBot não fornece orientações médicas nem recomenda tratamentos — para questões de saúde, consulte sempre um profissional de saúde.
+
+O EcoBot pode me recomendar medicamentos ou dosagens?
+Não. O EcoBot é um assistente educativo sobre descarte ambiental e uso da plataforma EcoMed. Para qualquer dúvida sobre saúde, tratamentos ou medicamentos, consulte sempre um médico ou farmacêutico.
+
+Como acessar meu perfil no EcoMed?
+Toque no ícone "Perfil" no menu inferior do app. Lá você encontra seus EcoCoins acumulados, suas conquistas, histórico de missões e seu link de indicação.
+
+Como editar meu perfil?
+Acesse "Perfil" no menu e toque em editar. Você pode atualizar seu nome, foto e preferências de notificação.
+
+Como ativar notificações no EcoMed?
+O EcoMed pode enviar notificações sobre novas missões disponíveis e lembretes de descarte. Para ativar, acesse "Perfil" > "Notificações" e habilite as permissões no navegador do seu celular.
+
+Como funciona o painel do parceiro (farmácias)?
+Farmácias que são parceiras do EcoMed têm acesso a um painel exclusivo onde podem gerenciar suas informações no mapa, ver estatísticas de usuários direcionados ao seu ponto e acompanhar o relatório de impacto mensal.
+
+Como minha farmácia pode virar parceira do EcoMed?
+Acesse ecomed.eco.br/parceiros e preencha o formulário de cadastro. A ativação leva de 2 a 3 dias úteis. A parceria básica (aparecer no mapa) é gratuita.
+
+O EcoMed respeita minha privacidade?
+Sim. O EcoMed segue a LGPD (Lei Geral de Proteção de Dados). Dados pessoais são usados apenas para fornecer os serviços da plataforma e não são vendidos ou compartilhados com terceiros. Você pode solicitar exclusão da sua conta pelo e-mail privacidade@ecomed.eco.br.
+
+Como solicitar a exclusão da minha conta?
+Entre em contato pelo e-mail privacidade@ecomed.eco.br solicitando a exclusão. O prazo de atendimento é de até 15 dias úteis. Todos os seus dados pessoais serão removidos permanentemente.
+
+O EcoMed tem código aberto?
+Sim. O EcoMed é um projeto open source. O código está disponível publicamente no GitHub (github.com/ivonsmatos/ecomed), permitindo que qualquer pessoa audite, contribua ou reutilize o código.
+
+Quais ODS (Objetivos de Desenvolvimento Sustentável) o EcoMed apoia?
+O EcoMed contribui diretamente para 6 ODS da ONU: ODS 3 (Saúde e Bem-Estar), ODS 4 (Educação de Qualidade), ODS 6 (Água Potável e Saneamento), ODS 9 (Inovação e Infraestrutura), ODS 12 (Consumo e Produção Responsáveis) e ODS 17 (Parcerias para os Objetivos).
+
+Como entrar em contato com o EcoMed?
+Para parcerias: parcerias@ecomed.eco.br. Para privacidade e dados: privacidade@ecomed.eco.br. Para dúvidas gerais, use o formulário em ecomed.eco.br/contato.
+
 === CIÊNCIAS AMBIENTAIS E MEDICAMENTOS ===
 
 O que são micropoluentes farmacêuticos?
