@@ -57,25 +57,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async jwt({ token, user, account }) {
-      if (user) {
+      if (user?.id) {
         // Primeiro login: user.id aqui é o CUID do banco (após o adapter criar o User)
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "CITIZEN";
 
         // Criar Wallet e creditar SIGNUP coins na primeira autenticação
+        const uid = user.id; // string garantido (sem undefined)
         try {
           const walletExists = await prisma.wallet.findUnique({
-            where: { userId: user.id },
+            where: { userId: uid },
             select: { id: true },
           });
 
           if (!walletExists) {
             await prisma.wallet.upsert({
-              where: { userId: user.id },
+              where: { userId: uid },
               update: {},
-              create: { userId: user.id, balance: 0, totalEarned: 0 },
+              create: { userId: uid, balance: 0, totalEarned: 0 },
             });
-            await creditCoins(user.id, "SIGNUP");
+            await creditCoins(uid, "SIGNUP");
 
             // Processar código de indicação via cookie (fluxo Google OAuth)
             if (account?.provider === "google") {
@@ -88,12 +89,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     where: { referralCode },
                     select: { id: true },
                   });
-                  if (referrer && referrer.id !== user.id) {
+                  if (referrer && referrer.id !== uid) {
                     await prisma.user.update({
-                      where: { id: user.id },
+                      where: { id: uid },
                       data: { referredById: referrer.id },
                     });
-                    await creditCoins(referrer.id, "REFERRAL", user.id);
+                    await creditCoins(referrer.id, "REFERRAL", uid);
                   }
                 }
               } catch {
