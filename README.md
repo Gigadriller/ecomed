@@ -25,8 +25,8 @@ O EcoMed resolve isso com três pilares:
 
 | Funcionalidade | Descrição |
 |---|---|
-| 🗺️ **Mapa Inteligente** | Encontre farmácias e UBS próximas que aceitam medicamentos vencidos. Filtros, rotas e detalhes de cada ponto. |
-| 🤖 **EcoBot (Chat com IA)** | Tire dúvidas sobre descarte 24h. RAG com base de conhecimento local, guardrails de 5 camadas e LLM via Groq. |
+| 🗺️ **Mapa Inteligente** | 58 mil+ pontos (farmácias LogMed + UBS DATASUS). Busca por cidade ou CEP, filtro por tipo de resíduo (medicamentos / agulhas e seringas), rotas e selo de validação comunitária. |
+| 🤖 **EcoBot (Chat com IA)** | Tire dúvidas sobre descarte 24h. RAG com base de conhecimento local (310 Q&As), guardrails de 5 camadas e LLM via Groq. |
 | 🪙 **EcoCoins (Gamificação)** | Ganhe EcoCoins por cada ação sustentável. Suba de nível, complete missões e troque por recompensas. |
 
 > Plataforma open source para descarte correto de medicamentos no Brasil.
@@ -37,7 +37,10 @@ O EcoMed resolve isso com três pilares:
 
 - ✅ **PWA** — instala direto do navegador, sem loja de aplicativos
 - ✅ **Offline-first** — service worker com serwist, cache estratégico
-- ✅ **Mapa de pontos de coleta** — 7.500+ pontos com filtro, popup e rota (OpenStreetMap + Leaflet)
+- ✅ **Mapa de pontos de coleta** — 58.000+ pontos (LogMed + DATASUS) com OpenStreetMap + Leaflet
+- ✅ **Busca por cidade ou CEP** — autocomplete de municípios + resolução de CEP via ViaCEP (server-side)
+- ✅ **Filtro por tipo de resíduo** — medicamentos vs. agulhas/seringas (farmácia vs. UBS)
+- ✅ **Selo de validação comunitária** — "descarte confirmado há X dias" + alerta de reportes em aberto
 - ✅ **Chat com IA educativa** — Groq (Llama 4 Scout) + RAG local, guardrails de 5 camadas
 - ✅ **Sistema de EcoCoins** — ledger imutável, 5 níveis (🌱→⭐), missões diárias, streaks, anti-fraude
 - ✅ **Blog educativo** — CMS Sanity, paginação, posts relacionados, prev/next com preview de imagem
@@ -46,7 +49,12 @@ O EcoMed resolve isso com três pilares:
 - ✅ **Ranking semanal** — top usuários por EcoCoins ganhos na semana
 - ✅ **Certificado Eco-Cidadão** — PDF gerado no servidor com QR Code de verificação
 - ✅ **Dashboard de impacto pessoal** — litros protegidos, descartes, pessoas educadas
+- ✅ **Página pública de impacto** (`/impacto`) — números reais da plataforma + cobertura nacional por município
+- ✅ **API pública para parceiros** (`/api/public/v1`) — pontos de coleta via REST com X-API-Key ([docs](https://ecomed.eco.br/desenvolvedores))
+- ✅ **Widget embeddable** (`/embed/mapa`) — mapa via iframe para sites de terceiros, sem chave
+- ✅ **SEO programático** — páginas `/descarte/[cidade]-[uf]` para municípios com pontos de coleta
 - ✅ **Notificações push (Web Push)** — engajamento e reativação
+- ✅ **Acessibilidade** — VLibras (tradução para Libras), skip-links, componentes acessíveis
 - ✅ **GEO / AI Discoverability** — schema.org completo, ai.txt, llms.txt, sitemap LLM
 
 ---
@@ -63,7 +71,7 @@ O EcoMed resolve isso com três pilares:
 | **Roteamento API** | Hono | 4.x | Micro-routers compostos em `/api/[[...route]]` |
 | **Autenticação** | Auth.js (NextAuth v5) | 5.x | Google OAuth + credentials |
 | **ORM** | Prisma | 7.x | Queries tipadas, migrações, seed |
-| **Banco de Dados** | PostgreSQL (Supabase) | — | Dados principais + extensão pgvector |
+| **Banco de Dados** | PostgreSQL gerenciado | — | Dados principais; pgvector em container dedicado para o RAG |
 | **Cache / Rate Limit** | Upstash Redis | — | Rate limiting, sessões |
 | **CMS** | Sanity | v3 | Blog, artigos educativos |
 | **Monitoramento** | Sentry | 10.x | Error tracking + performance |
@@ -170,14 +178,24 @@ ecomed/
 │       │   └── ...
 │       ├── admin/                  # Painel administrativo
 │       ├── parceiro/               # Dashboard de parceiros
+│       ├── impacto/                # Página pública de impacto + cobertura
+│       ├── desenvolvedores/        # Docs da API pública + widget
+│       ├── descarte/[slug]/        # SEO programático por cidade
+│       ├── embed/mapa/             # Widget iframe para terceiros
 │       ├── api/[[...route]]/       # API routes (Hono)
 │       │   └── routes/
 │       │       ├── chat.ts         # Proxy para o microserviço IA
-│       │       ├── pontos.ts       # CRUD de pontos de coleta
+│       │       ├── pontos.ts       # Pontos de coleta (+ filtro ?tipo=)
+│       │       ├── geo.ts          # Busca por cidade (autocomplete) e CEP
+│       │       ├── public.ts       # API pública v1 (X-API-Key + CORS por origin)
 │       │       ├── coins.ts        # Crédito de EcoCoins
 │       │       ├── quiz.ts         # Score de quizzes
 │       │       ├── user.ts         # Perfil e dados do usuário
 │       │       └── ...
+│       ├── api/cron/               # Crons HTTP (Bearer CRON_SECRET)
+│       │   ├── reset-missoes/      # 03:00 UTC
+│       │   ├── ensure-missoes/     # 03:15 UTC
+│       │   └── aggregate-views/    # 03:45 UTC — agrega PointView em PointViewDaily
 │       ├── layout.tsx              # Layout global + JSON-LD schemas
 │       ├── manifest.ts             # PWA manifest
 │       ├── sitemap.xml/            # Sitemap dinâmico
@@ -227,8 +245,14 @@ ecomed/
 │   └── favicon.svg                 # Favicon vetorial
 │
 ├── scripts/
-│   ├── deploy.sh                   # Deploy completo no servidor (git pull → docker build → restart)
+│   ├── deploy.sh                   # Deploy completo (git pull → build → migrate → restart)
+│   ├── geocode_cep_logmed.py       # Refina coordenadas LogMed por CEP (resumível, --apply)
 │   └── generate-icons.mjs          # Gera PNGs de ícones PWA a partir do favicon.svg
+│
+├── ops/maintenance/                # Scripts instalados como cron no servidor
+│   ├── healthcheck.sh              # */2 min — vigia o container web
+│   ├── cron-missoes.sh             # Dispara crons HTTP (reset|ensure|views)
+│   └── backup-db.sh                # 02:30 UTC — pg_dump diário, retenção 14 dias
 │
 ├── docs/                           # Documentação estratégica e de negócio
 ├── Dockerfile                      # Build do ecomed-web (Next.js)
@@ -345,19 +369,28 @@ O deploy é feito via Docker em uma VPS Linux. Todos os containers compartilham 
 | `ecomed-pgvector` | `pgvector/pgvector:pg16` | 5432 (interno) | Vetores para o RAG |
 | `ecomed-ollama` | `ollama/ollama:latest` | 11434 | Reservado (embeddings migrados para FastEmbed) |
 
-### Script de deploy automatizado
+### Caminhos de deploy
 
-```bash
-# No servidor
-bash scripts/deploy.sh
-```
+1. **GitHub Actions (preferido):** push em `master` dispara `.github/workflows/deploy.yml`
+   — vitest → build → `prisma migrate deploy` → restart → crons idempotentes
+2. **Manual:** `bash scripts/deploy.sh` no servidor (espelha o Actions)
 
-O script executa:
+O `deploy.sh` executa:
 1. `git fetch origin && git reset --hard origin/master` — atualiza o código
-2. `docker build -t ecomed-web .` — reconstrói a imagem Next.js (multi-stage)
-3. Re-indexação EcoBot: `docker exec ecomed-ia python -m app.ingest --reset`
-4. Substitui o container `ecomed-web` pelo novo (zero-downtime manual)
-5. Health check em loop até HTTP 200 em `/api/health`
+2. Build do estágio `builder` com **BuildKit secrets** (segredos nunca entram nas camadas da imagem)
+3. `prisma migrate deploy` — aplica migrações pendentes antes do restart
+4. Build da imagem final + re-indexação do EcoBot (`app.ingest --reset`)
+5. Substitui o container `ecomed-web` (janela de ~20s) e registra crons de backup/agregação
+6. Health check em loop até HTTP 200 em `/api/health`
+
+### Rotinas automáticas no servidor (cron)
+
+| Horário (UTC) | Rotina | Função |
+|---|---|---|
+| `*/2 min` | `healthcheck.sh` | Reinicia o container web se o health falhar |
+| `02:30` | `backup-db.sh` | `pg_dump` comprimido em `/opt/ecomed/backups`, retenção 14 dias |
+| `03:00` / `03:15` | `cron-missoes.sh reset\|ensure` | Ciclo de missões diárias/semanais |
+| `03:45` | `cron-missoes.sh views` | Agrega `PointView` → `PointViewDaily` e expurga brutos > 90 dias |
 
 ### Rebuild da IA (ao atualizar `ia/`)
 
@@ -445,8 +478,12 @@ O EcoMed é otimizado para ser citado e indexado por assistentes de IA (Google A
 ## 🧪 Testes
 
 ```bash
-# Testes unitários (Vitest)
+# Testes unitários (Vitest) — quiz, regras de coins/níveis/streaks
 pnpm test
+
+# Testes do microserviço de IA (pytest) — guardrails de entrada e saída
+pip install -r ia/requirements-dev.txt
+pytest ia/tests/ -v
 
 # Testes E2E (Playwright)
 pnpm test:e2e
@@ -457,6 +494,26 @@ pnpm lint
 # Type check
 pnpm build  # o build do Next.js faz type check automaticamente
 ```
+
+Cobertura atual: **71 testes vitest** (quiz + gamificação) e **43 testes pytest**
+(guardrails: emergência, injection, automedicação, falsos positivos e filtro de saída).
+O CI bloqueia o deploy se os testes vitest falharem.
+
+---
+
+## 🔌 API Pública (v1)
+
+API REST somente-leitura para parceiros integrarem os pontos de coleta —
+gratuita para projetos educativos, ONGs e órgãos públicos.
+
+| Endpoint | Descrição |
+|---|---|
+| `GET /api/public/v1/pontos/proximos?lat=&lng=&raio=` | Até 30 pontos ordenados por distância |
+| `GET /api/public/v1/pontos/:id` | Detalhes + horários de funcionamento |
+
+- Autenticação via header `X-API-Key` · rate limit 60 req/min · CORS por origin registrado
+- Widget iframe sem chave: `https://ecomed.eco.br/embed/mapa?lat=&lng=&zoom=`
+- Documentação completa e solicitação de chave: [ecomed.eco.br/desenvolvedores](https://ecomed.eco.br/desenvolvedores)
 
 ---
 

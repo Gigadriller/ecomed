@@ -8,11 +8,10 @@
 
 O EcoMed mantém dois conjuntos de pontos de coleta:
 
-| Origem      | Tipo                          | Quantidade | Status     | Script responsável   |
-|-------------|-------------------------------|------------|------------|----------------------|
-| **DATASUS** | Unidades Básicas de Saúde     | ~50.864    | `APPROVED` | `scripts/seed-ubs.ts`       |
-| **LogMed**  | Farmácias de descarte         | 7.940      | `APPROVED` | `scripts/import_logmed.py`  |
-| **Seeds**   | Pontos manuais de teste       | ~15        | `APPROVED` | `prisma/seed.ts`            |
+| Origem      | Tipo                      | Quantidade | Status     | Script responsável         |
+| ----------- | ------------------------- | ---------- | ---------- | -------------------------- |
+| **DATASUS** | Unidades Básicas de Saúde | ~50.864    | `APPROVED` | `scripts/seed-ubs.ts`      |
+| **LogMed**  | Farmácias de descarte     | 7.940      | `APPROVED` | `scripts/import_logmed.py` |
 
 ---
 
@@ -28,12 +27,12 @@ https://apidadosabertos.saude.gov.br/cnes/estabelecimentos
 
 Parâmetros de filtro utilizados: `?codigo_tipo_unidade=XX`, onde `XX` é:
 
-| Código | Tipo de unidade                     |
-|--------|-------------------------------------|
-| `01`   | Posto de Saúde                      |
-| `02`   | Centro de Saúde / UBS               |
-| `20`   | Pronto-Atendimento (UPA)            |
-| `32`   | Unidade de Saúde da Família (ESF)   |
+| Código | Tipo de unidade                   |
+| ------ | --------------------------------- |
+| `01`   | Posto de Saúde                    |
+| `02`   | Centro de Saúde / UBS             |
+| `20`   | Pronto-Atendimento (UPA)          |
+| `32`   | Unidade de Saúde da Família (ESF) |
 
 A API retorna no máximo 20 registros por página — a paginação é feita via `?offset=N`.
 
@@ -78,6 +77,7 @@ O script cria automaticamente (idempotente):
 - **Partner:** CNPJ `00394544000185` (CNPJ público do Ministério da Saúde)
 
 Antes de importar, todos os pontos anteriores deste parceiro são removidos:
+
 ```typescript
 await prisma.point.deleteMany({ where: { partnerId: partner.id } });
 ```
@@ -117,14 +117,14 @@ A URL `/onde-descartar/pdf` retorna um HTML de ~13 MB com uma tabela HTML comple
 
 #### Estrutura da tabela HTML
 
-| Coluna | Conteúdo                                      |
-|--------|-----------------------------------------------|
-| `td[0]` | UF (2 chars)                                 |
-| `td[1]` | Cidade                                       |
+| Coluna  | Conteúdo                                                 |
+| ------- | -------------------------------------------------------- |
+| `td[0]` | UF (2 chars)                                             |
+| `td[1]` | Cidade                                                   |
 | `td[2]` | `div.font-semibold` = Nome; segundo div = CNPJ formatado |
-| `td[3]` | Endereço                                     |
-| `td[4]` | CEP                                          |
-| `td[5]` | Rede/associação                              |
+| `td[3]` | Endereço                                                 |
+| `td[4]` | CEP                                                      |
+| `td[5]` | Rede/associação                                          |
 
 #### Normalização de redes
 
@@ -136,16 +136,16 @@ Nomes que não contêm estas palavras (ex.: nomes de pessoas como responsável t
 
 Redes resultantes (8 grupos):
 
-| Rede             | Descrição                                    |
-|------------------|----------------------------------------------|
-| `ABRAFARMA`      | Associação Brasileira de Redes de Farmácias  |
-| `FEBRAFAR`       | Federação Brasileira das Redes Associativistas |
-| `ABC`            | Rede ABC de Farmácias                        |
-| `ABCFARMA`       | Associação Brasileira do Comércio Farmacêutico |
-| `REDEFARMA`      | RedefarmaS                                   |
-| `SINCOFARMA`     | Sindicatos regionais de farmácias            |
-| `ABCDEFARMA`     | Rede regional                                |
-| `INDEPENDENTE`   | Farmácias sem rede ou rede não identificada  |
+| Rede           | Descrição                                      |
+| -------------- | ---------------------------------------------- |
+| `ABRAFARMA`    | Associação Brasileira de Redes de Farmácias    |
+| `FEBRAFAR`     | Federação Brasileira das Redes Associativistas |
+| `ABC`          | Rede ABC de Farmácias                          |
+| `ABCFARMA`     | Associação Brasileira do Comércio Farmacêutico |
+| `REDEFARMA`    | RedefarmaS                                     |
+| `SINCOFARMA`   | Sindicatos regionais de farmácias              |
+| `ABCDEFARMA`   | Rede regional                                  |
+| `INDEPENDENTE` | Farmácias sem rede ou rede não identificada    |
 
 #### Como executar
 
@@ -180,6 +180,12 @@ prisma/municipios_br.csv
 #### Estratégia
 
 A geocodificação é feita por **centroide de município** — todos os pontos de uma mesma cidade recebem as mesmas coordenadas. Isso é suficiente para o mapa de overview; a busca detalhada usa a geolocalização do usuário.
+
+> **Refinamento por CEP (junho 2026):** o script `scripts/geocode_cep_logmed.py`
+> corrige as coordenadas ponto a ponto consultando o CEP real de cada farmácia
+> (BrasilAPI → AwesomeAPI). É resumível (progresso em `.geocode_progress.json`),
+> roda em dry-run por padrão e rejeita coordenadas a mais de 80 km do centroide.
+> Executar: `DATABASE_URL=... python scripts/geocode_cep_logmed.py --apply` (~80 min).
 
 ```python
 # Normaliza nome: remove acentos, maiúsculas, espaços extras
@@ -232,16 +238,16 @@ Isso garante idempotência via `ON CONFLICT (id) DO NOTHING` — re-executar o s
 
 #### Parceiros criados (8)
 
-| Email                              | Rede             |
-|------------------------------------|------------------|
-| `rede.abrafarma@ecomed.eco.br`     | ABRAFARMA        |
-| `rede.febrafar@ecomed.eco.br`      | FEBRAFAR         |
-| `rede.abc@ecomed.eco.br`           | ABC              |
-| `rede.abcfarma@ecomed.eco.br`      | ABCFARMA         |
-| `rede.redefarma@ecomed.eco.br`     | REDEFARMA        |
-| `rede.sincofarma@ecomed.eco.br`    | SINCOFARMA       |
-| `rede.abcdefarma@ecomed.eco.br`    | ABCDEFARMA       |
-| `rede.independente@ecomed.eco.br`  | INDEPENDENTE     |
+| Email                             | Rede         |
+| --------------------------------- | ------------ |
+| `rede.abrafarma@ecomed.eco.br`    | ABRAFARMA    |
+| `rede.febrafar@ecomed.eco.br`     | FEBRAFAR     |
+| `rede.abc@ecomed.eco.br`          | ABC          |
+| `rede.abcfarma@ecomed.eco.br`     | ABCFARMA     |
+| `rede.redefarma@ecomed.eco.br`    | REDEFARMA    |
+| `rede.sincofarma@ecomed.eco.br`   | SINCOFARMA   |
+| `rede.abcdefarma@ecomed.eco.br`   | ABCDEFARMA   |
+| `rede.independente@ecomed.eco.br` | INDEPENDENTE |
 
 #### Bulk insert via psycopg2
 
@@ -351,15 +357,15 @@ Quando o usuário ativa a geolocalização, o endpoint `/api/pontos/proximos` re
 
 ## 6. Arquivos relevantes
 
-| Arquivo                          | Descrição                                      |
-|----------------------------------|------------------------------------------------|
-| `scripts/seed-ubs.ts`            | Importação DATASUS via API CNES                |
-| `scripts/scrape_logmed.py`       | Scraping HTML do site LogMed                   |
-| `scripts/geocode_logmed.py`      | Geocodificação via dataset IBGE local          |
-| `scripts/import_logmed.py`       | Bulk insert no PostgreSQL                      |
-| `prisma/municipios_br.csv`       | Dataset IBGE: 5.571 municípios com lat/lng     |
-| `prisma/seed-logmed.ts`          | Cria usuário sistema `seed@ecomed.eco.br`      |
-| `prisma/schema.prisma`           | Modelos `Point`, `Partner`, `User`             |
-| `src/app/api/[[...route]]/routes/pontos.ts` | Endpoints do mapa (DISTINCT ON)   |
+| Arquivo                                     | Descrição                                  |
+| ------------------------------------------- | ------------------------------------------ |
+| `scripts/seed-ubs.ts`                       | Importação DATASUS via API CNES            |
+| `scripts/scrape_logmed.py`                  | Scraping HTML do site LogMed               |
+| `scripts/geocode_logmed.py`                 | Geocodificação via dataset IBGE local      |
+| `scripts/import_logmed.py`                  | Bulk insert no PostgreSQL                  |
+| `prisma/municipios_br.csv`                  | Dataset IBGE: 5.571 municípios com lat/lng |
+| `prisma/seed-logmed.ts`                     | Cria usuário sistema `seed@ecomed.eco.br`  |
+| `prisma/schema.prisma`                      | Modelos `Point`, `Partner`, `User`         |
+| `src/app/api/[[...route]]/routes/pontos.ts` | Endpoints do mapa (DISTINCT ON)            |
 
 > **Nota:** `prisma/logmed_pontos.json` é um arquivo gerado e não deve ser versionado. Está incluído no `.gitignore`.
