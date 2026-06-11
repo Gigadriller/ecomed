@@ -191,6 +191,7 @@ model Point {
   reports        Report[]
   schedules      Schedule[]
   views          PointView[]
+  viewsDaily     PointViewDaily[]
   checkins       Checkin[]
 }
 
@@ -266,6 +267,20 @@ model PointView {
   pointId  String
   viewedAt DateTime @default(now())
   point    Point    @relation(fields: [pointId], references: [id], onDelete: Cascade)
+
+  @@index([viewedAt])
+}
+
+// Agregado diário de visualizações — alimentado pelo cron aggregate-views.
+// Linhas brutas de PointView são expurgadas após 90 dias; este é o histórico permanente.
+model PointViewDaily {
+  id      String   @id @default(cuid())
+  pointId String
+  date    DateTime // truncado para o dia (UTC)
+  count   Int      @default(0)
+  point   Point    @relation(fields: [pointId], references: [id], onDelete: Cascade)
+
+  @@unique([pointId, date])
 }
 
 model PasswordResetToken {

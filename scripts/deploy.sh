@@ -60,10 +60,19 @@ install -m 0755 ops/maintenance/backup-db.sh /opt/ecomed/scripts/maintenance/bac
   mkdir -p /opt/ecomed/scripts/maintenance
   install -m 0755 ops/maintenance/backup-db.sh /opt/ecomed/scripts/maintenance/backup-db.sh
 }
+install -m 0755 ops/maintenance/cron-missoes.sh /opt/ecomed/scripts/maintenance/cron-missoes.sh
 current_cron=$(crontab -l 2>/dev/null || true)
+new_cron="$current_cron"
 if ! echo "$current_cron" | grep -q '/opt/ecomed/scripts/maintenance/backup-db.sh'; then
-  printf '%s\n30 2 * * * /opt/ecomed/scripts/maintenance/backup-db.sh >> /var/log/ecomed-backup.log 2>&1\n' "$current_cron" | sed '/^$/d' | crontab -
+  new_cron="$new_cron"$'\n'"30 2 * * * /opt/ecomed/scripts/maintenance/backup-db.sh >> /var/log/ecomed-backup.log 2>&1"
   echo '✅ Cron backup-db adicionado (02:30 diário)'
+fi
+if ! echo "$current_cron" | grep -q 'cron-missoes.sh views'; then
+  new_cron="$new_cron"$'\n'"45 3 * * * /opt/ecomed/scripts/maintenance/cron-missoes.sh views"
+  echo '✅ Cron aggregate-views adicionado (03:45 diário)'
+fi
+if [ "$new_cron" != "$current_cron" ]; then
+  printf '%s\n' "$new_cron" | sed '/^$/d' | crontab -
 fi
 
 echo '=== Aguardando health check ==='

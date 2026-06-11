@@ -113,6 +113,10 @@ jobs:
               new_cron="$new_cron"$'\n'"30 2 * * * /opt/ecomed/scripts/maintenance/backup-db.sh >> /var/log/ecomed-backup.log 2>&1"
               echo "✅ Cron backup-db adicionado (02:30 diário)"
             fi
+            if ! echo "$current_cron" | grep -q 'cron-missoes.sh views'; then
+              new_cron="$new_cron"$'\n'"45 3 * * * /opt/ecomed/scripts/maintenance/cron-missoes.sh views"
+              echo "✅ Cron aggregate-views adicionado (03:45 diário)"
+            fi
             if [ "$new_cron" != "$current_cron" ]; then
               printf '%s\n' "$new_cron" | sed '/^$/d' | crontab -
             fi

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated bundle, not source code.
     "public/sw.js",
+    // Worktrees temporários de ferramentas (cópias do repo, não fonte)
+    ".claude/**",
   ]),
 ]);
 

@@ -20,7 +20,8 @@ target="${1:-}"
 case "$target" in
   reset)  endpoint="reset-missoes" ;;
   ensure) endpoint="ensure-missoes" ;;
-  *) echo "uso: $0 reset|ensure" >&2; exit 2 ;;
+  views)  endpoint="aggregate-views" ;;
+  *) echo "uso: $0 reset|ensure|views" >&2; exit 2 ;;
 esac
 
 LOG_FILE="/var/log/ecomed-cron.log"
