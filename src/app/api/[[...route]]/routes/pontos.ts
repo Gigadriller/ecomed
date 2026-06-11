@@ -22,7 +22,15 @@ const querySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   raio: z.coerce.number().min(500).max(50_000).default(5000),
+  tipo: z.enum(["todos", "medicamentos", "perfurocortantes"]).default("todos"),
 });
+
+// Variações históricas de residueTypes no banco (LogMed gravou 'medicamento',
+// DATASUS gravou 'medicamentos' + 'seringas', seeds manuais variam)
+const TIPO_ALIASES: Record<string, string[]> = {
+  medicamentos: ["medicamento", "medicamentos"],
+  perfurocortantes: ["seringas", "seringa", "perfurocortantes", "agulhas"],
+};
 
 // GET /api/pontos/mapa — pontos aprovados para o mapa (amostra distribuída por cidade)
 // Com 58k+ pontos no banco, retornamos 1 ponto por cidade (até ~780 marcadores) para
@@ -76,7 +84,7 @@ app.get("/proximos", zValidator("query", querySchema), async (c) => {
     console.warn("[pontos/proximos] rate limit unavailable, proceeding:", err);
   }
 
-  const { lat, lng, raio } = c.req.valid("query");
+  const { lat, lng, raio, tipo } = c.req.valid("query");
 
   // Bounding box em graus (margem de 50% para cobrir distâncias diagonais)
   const delta = (raio / 111_000) * 1.5;
@@ -87,6 +95,9 @@ app.get("/proximos", zValidator("query", querySchema), async (c) => {
         status: "APPROVED",
         latitude: { gte: lat - delta, lte: lat + delta },
         longitude: { gte: lng - delta, lte: lng + delta },
+        ...(tipo !== "todos" && {
+          residueTypes: { hasSome: TIPO_ALIASES[tipo] },
+        }),
       },
       select: {
         id: true,
