@@ -192,6 +192,47 @@ export function PartnerTypesSection() {
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErro(null);
+    setSending(true);
+
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      nome: String(fd.get("nome") ?? ""),
+      email: String(fd.get("email") ?? ""),
+      telefone: String(fd.get("telefone") ?? ""),
+      cargo: String(fd.get("cargo") ?? ""),
+      organizacao: String(fd.get("organizacao") ?? ""),
+      tipoParceria: String(fd.get("tipoParceria") ?? ""),
+      cidadeEstado: String(fd.get("cidadeEstado") ?? ""),
+      mensagem: String(fd.get("mensagem") ?? ""),
+    };
+
+    try {
+      const res = await fetch("/api/parcerias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setErro(
+          data?.error ??
+            "Não foi possível enviar agora. Tente novamente ou escreva para parcerias@ecomed.eco.br.",
+        );
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setErro("Falha de conexão. Tente novamente ou escreva para parcerias@ecomed.eco.br.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (submitted) {
     return (
@@ -209,13 +250,7 @@ export function ContactForm() {
   }
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setSubmitted(true);
-      }}
-      className="max-w-lg"
-    >
+    <form onSubmit={handleSubmit} className="max-w-lg">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-900 mb-1">
@@ -223,8 +258,10 @@ export function ContactForm() {
           </label>
           <input
             type="text"
+            name="nome"
             placeholder="Seu nome"
             required
+            minLength={3}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
           />
         </div>
@@ -234,6 +271,7 @@ export function ContactForm() {
           </label>
           <input
             type="email"
+            name="email"
             placeholder="seu@email.com"
             required
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
@@ -245,8 +283,10 @@ export function ContactForm() {
           </label>
           <input
             type="tel"
+            name="telefone"
             placeholder="(11) 99999-8888"
             required
+            minLength={8}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
           />
         </div>
@@ -256,6 +296,7 @@ export function ContactForm() {
           </label>
           <input
             type="text"
+            name="cargo"
             placeholder="Farmacêutico, Professor..."
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
           />
@@ -268,8 +309,10 @@ export function ContactForm() {
         </label>
         <input
           type="text"
+          name="organizacao"
           placeholder="Nome da farmácia, escola, empresa..."
           required
+          minLength={2}
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
         />
       </div>
@@ -279,6 +322,7 @@ export function ContactForm() {
           Tipo de parceria <span className="text-red-500">*</span>
         </label>
         <select
+          name="tipoParceria"
           required
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all cursor-pointer bg-white"
         >
@@ -304,8 +348,10 @@ export function ContactForm() {
         </label>
         <input
           type="text"
+          name="cidadeEstado"
           placeholder="São Paulo, SP"
           required
+          minLength={2}
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all"
         />
       </div>
@@ -315,18 +361,27 @@ export function ContactForm() {
           Mensagem (opcional)
         </label>
         <textarea
+          name="mensagem"
           placeholder="Conte mais sobre como gostaria de colaborar com o EcoMed..."
           rows={4}
+          maxLength={2000}
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-eco-teal focus:ring-2 focus:ring-eco-teal/20 transition-all resize-y"
         />
       </div>
 
+      {erro && (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {erro}
+        </p>
+      )}
+
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <button
           type="submit"
-          className="bg-eco-green text-white px-8 py-3 rounded-lg text-base font-bold hover:bg-eco-green/90 transition-colors cursor-pointer border-none"
+          disabled={sending}
+          className="bg-eco-green text-white px-8 py-3 rounded-lg text-base font-bold hover:bg-eco-green/90 transition-colors cursor-pointer border-none disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Enviar Formulário
+          {sending ? "Enviando…" : "Enviar Formulário"}
         </button>
         <span className="text-xs text-gray-400">
           Ou envie e-mail direto para{" "}

@@ -13,6 +13,7 @@ type Template =
   | "partner-rejected"
   | "password-reset"
   | "report-received"
+  | "partnership-inquiry"
 
 const subjects: Record<Template, string> = {
   "welcome": "Bem-vindo ao EcoMed! 🌿",
@@ -21,6 +22,7 @@ const subjects: Record<Template, string> = {
   "partner-rejected": "Atualização sobre seu cadastro",
   "password-reset": "Redefinir sua senha",
   "report-received": "Novo problema reportado no seu ponto",
+  "partnership-inquiry": "🤝 Nova solicitação de parceria (formulário do site)",
 }
 
 export async function sendEmail(

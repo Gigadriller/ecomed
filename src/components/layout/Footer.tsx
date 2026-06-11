@@ -146,6 +146,8 @@ export function Footer() {
                 { label: "Encontrar ponto", href: "/mapa" },
                 { label: "Assistente IA", href: "/app/chat" },
                 { label: "Blog educativo", href: "/blog" },
+                { label: "Nosso impacto", href: "/impacto" },
+                { label: "Descarte em São Paulo", href: "/descarte/sao-paulo-sp" },
                 { label: "Perguntas frequentes", href: "/#faq" },
               ].map(({ label, href }) => (
                 <li key={label}>
@@ -169,6 +171,8 @@ export function Footer() {
                 { label: "Cadastre seu ponto", href: "/cadastrar" },
                 { label: "Dashboard", href: "/parceiro/dashboard" },
                 { label: "Estatísticas", href: "/parceiro/estatisticas" },
+                { label: "API para desenvolvedores", href: "/desenvolvedores" },
+                { label: "Mapa para seu site", href: "/embed/mapa" },
               ].map(({ label, href }) => (
                 <li key={label}>
                   <Link href={href}

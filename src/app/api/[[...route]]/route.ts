@@ -20,6 +20,7 @@ import { lgpdRouter } from "./routes/lgpd";
 import { userRouter } from "./routes/user";
 import { publicApiRouter } from "./routes/public";
 import { geoRouter } from "./routes/geo";
+import { parceriasRouter } from "./routes/parcerias";
 
 export const maxDuration = 60;
 
@@ -49,6 +50,7 @@ app.route("/lgpd", lgpdRouter);
 app.route("/user", userRouter);
 app.route("/public", publicApiRouter);
 app.route("/geo", geoRouter);
+app.route("/parcerias", parceriasRouter);
 
 export const GET = handle(app);
 export const POST = handle(app);
