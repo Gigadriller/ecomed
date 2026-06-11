@@ -1,0 +1,3 @@
+# Scripts shell sempre com LF — CRLF quebra o bash no servidor Linux
+*.sh text eol=lf
+Dockerfile text eol=lf
