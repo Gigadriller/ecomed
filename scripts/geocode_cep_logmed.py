@@ -1,32 +1,32 @@
 # -*- coding: utf-8 -*-
 """
-geocode_cep_logmed.py — refina as coordenadas dos pontos LogMed usando o CEP.
+geocode_cep_logmed.py — refina as coordenadas dos pontos LogMed via Nominatim/OSM.
 
 Contexto: a importação original geocodificou os 7.940 pontos LogMed pelo
 CENTROIDE do município (todos os pontos da mesma cidade ficaram empilhados
-na mesma coordenada). Este script consulta APIs públicas de CEP para obter
-a posição real de cada endereço.
+na mesma coordenada). Este script geocodifica o ENDEREÇO REAL de cada ponto.
 
-Fontes (em ordem de tentativa):
-  1. BrasilAPI  https://brasilapi.com.br/api/cep/v2/{cep}   (coordenadas OSM)
-  2. AwesomeAPI https://cep.awesomeapi.com.br/json/{cep}     (lat/lng diretos)
+Fonte: Nominatim (OpenStreetMap) — gratuito, sem chave.
+  1. Consulta estruturada (street + city + state + country)
+  2. Fallback: consulta livre "endereço, cidade, UF, Brasil"
+(BrasilAPI/AwesomeAPI foram descartadas: a primeira raramente tem coordenadas,
+ a segunda tem quota por IP muito baixa.)
 
 Características:
   - RESUMÍVEL: progresso salvo em scripts/.geocode_progress.json a cada lote.
     Pode interromper (Ctrl+C) e rodar de novo — continua de onde parou.
   - SEGURO: por padrão roda em dry-run (não escreve no banco). Use --apply.
-  - EDUCADO: ~2 req/s para não abusar das APIs públicas.
+  - EDUCADO: 1.1 s entre requisições (política de uso do Nominatim) com
+    User-Agent identificado.
   - Sanidade: rejeita coordenadas a mais de 80 km do centroide atual do ponto
-    (CEP errado no cadastro não pode jogar a farmácia em outro estado).
+    (endereço errado no cadastro não pode jogar a farmácia em outro estado).
 
 Uso:
-  # Teste sem escrever (mostra amostra do que faria)
-  DATABASE_URL="postgresql://..." python scripts/geocode_cep_logmed.py
+  # Teste sem escrever
+  DATABASE_URL="postgresql://..." python geocode_cep_logmed.py --limit 15
 
-  # Valendo
-  DATABASE_URL="postgresql://..." python scripts/geocode_cep_logmed.py --apply
-
-Duração estimada: ~70–90 min para 7.940 pontos (2 req/s, 1 CEP por ponto).
+  # Valendo (rodar em container/nohup — duração total: 3 a 5 horas)
+  DATABASE_URL="postgresql://..." python geocode_cep_logmed.py --apply
 """
 import argparse
 import json
@@ -40,9 +40,11 @@ import psycopg2
 import requests
 
 PROGRESS_FILE = Path(__file__).parent / ".geocode_progress.json"
-RATE_DELAY_S = 0.5          # ~2 req/s
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+USER_AGENT = "EcoMed-Geocoder/1.0 (contato@ecomed.eco.br; refino de pontos de coleta)"
+RATE_DELAY_S = 1.1          # política Nominatim: máximo 1 req/s
 MAX_DIST_KM = 80            # rejeita coordenada muito longe do centroide atual
-BATCH_COMMIT = 50           # commit + save progress a cada N pontos
+BATCH_COMMIT = 25           # commit + save progress a cada N pontos
 
 
 def haversine_km(lat1, lon1, lat2, lon2):
@@ -54,32 +56,34 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return 2 * r * math.asin(math.sqrt(a))
 
 
-def geocode_brasilapi(cep: str):
+def _nominatim(params: dict):
     try:
-        r = requests.get(f"https://brasilapi.com.br/api/cep/v2/{cep}", timeout=8)
+        r = requests.get(
+            NOMINATIM_URL,
+            params={**params, "format": "json", "limit": 1, "countrycodes": "br"},
+            headers={"User-Agent": USER_AGENT},
+            timeout=10,
+        )
         if r.status_code != 200:
             return None
-        data = r.json()
-        loc = (data.get("location") or {}).get("coordinates") or {}
-        lat, lng = loc.get("latitude"), loc.get("longitude")
-        if lat and lng:
-            return float(lat), float(lng), "brasilapi"
+        results = r.json()
+        if results:
+            return float(results[0]["lat"]), float(results[0]["lon"])
     except Exception:
         pass
     return None
 
 
-def geocode_awesomeapi(cep: str):
-    try:
-        r = requests.get(f"https://cep.awesomeapi.com.br/json/{cep}", timeout=8)
-        if r.status_code != 200:
-            return None
-        data = r.json()
-        lat, lng = data.get("lat"), data.get("lng")
-        if lat and lng:
-            return float(lat), float(lng), "awesomeapi"
-    except Exception:
-        pass
+def geocode(address: str, city: str, state: str):
+    """Consulta estruturada; se falhar, consulta livre. Respeita o rate limit."""
+    coords = _nominatim({"street": address, "city": city, "state": state, "country": "Brasil"})
+    if coords:
+        return coords[0], coords[1], "nominatim-structured"
+
+    time.sleep(RATE_DELAY_S)
+    coords = _nominatim({"q": f"{address}, {city}, {state}, Brasil"})
+    if coords:
+        return coords[0], coords[1], "nominatim-freeform"
     return None
 
 
@@ -97,6 +101,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true", help="escreve no banco (sem isso é dry-run)")
     parser.add_argument("--limit", type=int, default=0, help="processar no máximo N pontos (0 = todos)")
+    parser.add_argument("--retry-failed", action="store_true", help="reprocessa pontos que falharam antes")
     args = parser.parse_args()
 
     db_url = os.environ.get("DATABASE_URL")
@@ -106,12 +111,14 @@ def main():
 
     progress = load_progress()
     done, failed = progress["done"], progress["failed"]
+    if args.retry_failed:
+        failed.clear()
 
     conn = psycopg2.connect(db_url)
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT id, "zipCode", latitude, longitude, city, state
+        SELECT id, address, city, state, latitude, longitude
         FROM "Point"
         WHERE id LIKE 'logmed-%' AND status = 'APPROVED'
         ORDER BY id
@@ -123,19 +130,14 @@ def main():
         pendentes = pendentes[: args.limit]
 
     print(f"Pontos LogMed: {len(pontos)} | já geocodificados: {len(done)} | "
-          f"falhas anteriores: {len(failed)} | nesta execução: {len(pendentes)}")
+          f"falhas anteriores: {len(failed)} | nesta execução: {len(pendentes)}", flush=True)
     if not args.apply:
-        print("⚠ DRY-RUN — nada será escrito. Use --apply para gravar.\n")
+        print("⚠ DRY-RUN — nada será escrito. Use --apply para gravar.\n", flush=True)
 
     atualizados = rejeitados = sem_coord = 0
     try:
-        for i, (pid, cep, lat_atual, lng_atual, city, state) in enumerate(pendentes, 1):
-            cep_limpo = (cep or "").replace("-", "").strip()
-            if len(cep_limpo) != 8:
-                failed[pid] = "cep_invalido"
-                continue
-
-            resultado = geocode_brasilapi(cep_limpo) or geocode_awesomeapi(cep_limpo)
+        for i, (pid, address, city, state, lat_atual, lng_atual) in enumerate(pendentes, 1):
+            resultado = geocode(address or "", city, state)
             time.sleep(RATE_DELAY_S)
 
             if not resultado:
@@ -163,9 +165,10 @@ def main():
                     conn.commit()
                 save_progress(progress)
                 print(f"  [{i}/{len(pendentes)}] {pid} ({city}-{state}) "
-                      f"Δ{dist:.1f}km via {fonte} | ok={atualizados} falha={sem_coord} rej={rejeitados}")
+                      f"Δ{dist:.1f}km via {fonte} | ok={atualizados} falha={sem_coord} rej={rejeitados}",
+                      flush=True)
     except KeyboardInterrupt:
-        print("\nInterrompido — progresso salvo, rode novamente para continuar.")
+        print("\nInterrompido — progresso salvo, rode novamente para continuar.", flush=True)
     finally:
         if args.apply:
             conn.commit()
@@ -174,8 +177,9 @@ def main():
         conn.close()
 
     print(f"\n{'APLICADO' if args.apply else 'DRY-RUN'}: "
-          f"{atualizados} atualizados | {sem_coord} sem coordenada | {rejeitados} rejeitados (> {MAX_DIST_KM} km)")
-    print(f"Progresso em {PROGRESS_FILE.name} — rode de novo para reprocessar só os pendentes.")
+          f"{atualizados} atualizados | {sem_coord} sem coordenada | {rejeitados} rejeitados (> {MAX_DIST_KM} km)",
+          flush=True)
+    print(f"Progresso em {PROGRESS_FILE.name} — rode de novo para reprocessar só os pendentes.", flush=True)
 
 
 if __name__ == "__main__":
