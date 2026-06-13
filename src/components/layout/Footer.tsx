@@ -211,9 +211,20 @@ export function Footer() {
         </div>
 
         {/* ── Copyright ────────────────────────────────────────────── */}
-        <div className="border-t border-white/10 mt-10 py-6 text-center">
+        <div className="border-t border-white/10 mt-10 py-6 text-center space-y-1">
           <p className="font-sans text-white/50 text-sm">
             © {new Date().getFullYear()} EcoMed. Desenvolvido para o meio ambiente. Todos os direitos reservados.
+          </p>
+          <p className="font-sans text-white/40 text-xs">
+            Desenvolvido por{" "}
+            <a
+              href="https://scaledata.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/60 hover:text-eco-lime transition-colors"
+            >
+              Scaledata
+            </a>
           </p>
         </div>
       </div>
