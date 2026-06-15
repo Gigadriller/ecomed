@@ -8,6 +8,7 @@ import { creditCoins } from "@/lib/coins"
 import { checkRateLimit } from "@/lib/ratelimit"
 import { verificarMilestonesDescarte } from "@/lib/goals/milestones"
 import { aplicarProgressoMissoes } from "@/lib/coins/missions"
+import { haversineMetros } from "@/lib/geo/haversine"
 
 const checkin = new Hono()
 
@@ -138,6 +139,88 @@ checkin.post("/", zValidator("json", checkinSchema), async (c) => {
       firstInMonth: !checkinRecente,
     },
     userName: usuario?.name ?? "Usuário",
+    pointName: point.name,
+    novosSelosDescarte,
+  })
+})
+
+// ── POST /api/checkin/store — cidadão escaneia QR da loja ─────────────────────
+const storeSchema = z.object({
+  pointId: z.string().min(1),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+})
+
+checkin.post("/store", zValidator("json", storeSchema), async (c) => {
+  const ip = c.req.header("CF-Connecting-IP") ?? "anon"
+  const { success } = await checkRateLimit("map", ip)
+  if (!success) return c.json({ error: "Muitas requisições." }, 429)
+
+  const session = await auth()
+  if (!session?.user?.id) return c.json({ error: "Não autenticado." }, 401)
+  const userId = session.user.id
+
+  const { pointId, lat, lng } = c.req.valid("json")
+
+  // 1. Ponto existe e está aprovado?
+  const point = await prisma.point.findFirst({
+    where: { id: pointId, status: "APPROVED" },
+    select: { id: true, name: true, latitude: true, longitude: true },
+  })
+  if (!point) return c.json({ error: "Ponto não encontrado ou inativo." }, 404)
+
+  // 2. Já registrou nesta loja hoje?
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  const amanha = new Date(hoje)
+  amanha.setDate(amanha.getDate() + 1)
+
+  const jaHoje = await prisma.checkin.findFirst({
+    where: { userId, pointId, createdAt: { gte: hoje, lt: amanha } },
+  })
+  if (jaHoje) {
+    return c.json({ error: "Você já registrou um descarte aqui hoje.", code: "DUPLICATE_CHECKIN" }, 409)
+  }
+
+  // 3. GPS confirma presença? (< 200 m = bônus)
+  let hasGps = false
+  if (lat !== undefined && lng !== undefined) {
+    const dist = haversineMetros(lat, lng, point.latitude, point.longitude)
+    hasGps = dist <= 200
+  }
+  const coinsBase = hasGps ? 15 : 10
+
+  // 4. Bônus especiais
+  const primeiraVisita = await prisma.checkin.findFirst({ where: { userId, pointId } })
+  const trintaDiasAtras = new Date()
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30)
+  const checkinRecente = await prisma.checkin.findFirst({
+    where: { userId, createdAt: { gte: trintaDiasAtras } },
+  })
+
+  // 5. Gravar check-in + creditar
+  const [, coinResult] = await Promise.all([
+    prisma.checkin.create({ data: { userId, pointId, coinsEarned: coinsBase, hasGps } }),
+    creditCoins(userId, "CHECKIN", pointId, coinsBase),
+  ])
+
+  await aplicarProgressoMissoes(userId, "CHECKIN").catch(() => null)
+
+  if (!primeiraVisita) await creditCoins(userId, "CHECKIN_NEW_POINT", pointId)
+  if (!checkinRecente) await creditCoins(userId, "CHECKIN_FIRST_MONTH", pointId)
+
+  const [walletAtual, novosSelosDescarte] = await Promise.all([
+    prisma.wallet.findUnique({ where: { userId }, select: { balance: true } }),
+    verificarMilestonesDescarte(userId).catch(() => [] as string[]),
+  ])
+
+  return c.json({
+    ok: true,
+    coinsEarned: coinsBase,
+    hasGps,
+    newBalance: walletAtual?.balance ?? coinResult.newBalance,
+    levelUp: coinResult.levelUp ?? null,
+    bonuses: { newPoint: !primeiraVisita, firstInMonth: !checkinRecente },
     pointName: point.name,
     novosSelosDescarte,
   })

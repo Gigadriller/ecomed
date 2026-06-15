@@ -1,14 +1,16 @@
 import { requirePartner } from "@/lib/auth/session";
 import { Header } from "@/components/layout/Header";
 import Link from "next/link";
-import { LayoutDashboard, MapPin, BarChart2, QrCode } from "lucide-react";
+import { LayoutDashboard, MapPin, BarChart2, QrCode, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/parceiro/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/parceiro/pontos", label: "Meus pontos", icon: MapPin },
+  { href: "/parceiro/qrcode", label: "QR Code da loja", icon: QrCode },
+  { href: "/parceiro/impacto", label: "Impacto ESG", icon: Leaf },
   { href: "/parceiro/estatisticas", label: "Estatísticas", icon: BarChart2 },
-  { href: "/parceiro/scanner", label: "Scanner de Check-in", icon: QrCode },
+  { href: "/parceiro/scanner", label: "Scanner", icon: QrCode },
 ];
 
 export default async function ParceiroLayout({ children }: { children: React.ReactNode }) {

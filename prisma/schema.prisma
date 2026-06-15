@@ -184,6 +184,7 @@ model Point {
   status         PointStatus @default(PENDING)
   rejectedReason String?
   residueTypes   String[]
+  isHighlighted  Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   partner        Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
