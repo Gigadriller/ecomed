@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDistance } from "@/lib/utils";
+import { AdSlot } from "@/components/ads/AdSlot";
 import type { MapPoint } from "./types";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -142,6 +143,9 @@ export function PointDrawer({ point, open, onClose }: PointDrawerProps) {
             <Flag className="mr-1.5 size-3" />
             Reportar problema
           </a>
+
+          {/* Publicidade — banner contextual da cidade */}
+          <AdSlot placement="MAP_LIST" city={point.city} state={point.state} className="pt-2" />
         </div>
       </DrawerContent>
     </Drawer>

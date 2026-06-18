@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { prisma } from "@/lib/db/prisma";
 import { cidadePorSlug } from "@/lib/geo/cidades";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 // SEO programático: uma página por município com pontos de coleta.
 // ISR com revalidação diária — a primeira visita gera, as demais servem cache.
@@ -165,6 +166,13 @@ export default async function DescarteCidadePage({ params }: Props) {
             )}
           </div>
         </section>
+
+        {/* Publicidade — banner segmentado por cidade */}
+        <div className="bg-white pb-4">
+          <div className="container mx-auto max-w-3xl px-4">
+            <AdSlot placement="CITY_DISCARD" city={cidade.city} state={cidade.state} />
+          </div>
+        </div>
 
         {/* FAQ */}
         <section className="bg-gray-50 py-14">

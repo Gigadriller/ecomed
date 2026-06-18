@@ -512,3 +512,41 @@ model AiPromptLog {
   @@index([userId])
   @@index([status, createdAt])
 }
+
+// ---- Publicidade — Campanhas de banner de parceiros ----
+// Regras: só marca/loja/serviços (nunca medicamento de prescrição — ANVISA RDC 96/2008).
+// Toda campanha é criada/aprovada pelo admin. Exibição sempre com selo "Publicidade".
+
+model AdCampaign {
+  id          String         @id @default(cuid())
+  advertiser  String // nome do anunciante exibido no selo (ex.: "Farmácia São Rafael")
+  title       String // rótulo interno de gestão
+  imageUrl    String // criativo (webp no R2)
+  targetUrl   String // destino do clique (site/loja do parceiro)
+  placement   String // MAP_LIST | CITY_DISCARD | IMPACT | BLOG_ARTICLE
+  format      String         @default("LEADERBOARD") // LEADERBOARD | RECTANGLE | MOBILE_BANNER
+  targetState String? // segmentação por UF (null = nacional)
+  targetCity  String? // segmentação por cidade (null = todas)
+  active      Boolean        @default(true)
+  startsAt    DateTime       @default(now())
+  endsAt      DateTime? // null = sem data de término
+  weight      Int            @default(1) // peso na rotação entre campanhas do mesmo slot
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  events      AdEventDaily[]
+
+  @@index([placement, active])
+}
+
+// Agregação diária de impressões e cliques (mesmo padrão do PointViewDaily)
+model AdEventDaily {
+  id          String     @id @default(cuid())
+  campaignId  String
+  date        DateTime // dia UTC truncado (00:00)
+  impressions Int        @default(0)
+  clicks      Int        @default(0)
+  campaign    AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([date])
+}

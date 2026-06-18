@@ -21,6 +21,7 @@ import { userRouter } from "./routes/user";
 import { publicApiRouter } from "./routes/public";
 import { geoRouter } from "./routes/geo";
 import { parceriasRouter } from "./routes/parcerias";
+import ads from "./routes/ads";
 
 export const maxDuration = 60;
 
@@ -51,6 +52,7 @@ app.route("/user", userRouter);
 app.route("/public", publicApiRouter);
 app.route("/geo", geoRouter);
 app.route("/parcerias", parceriasRouter);
+app.route("/ads", ads);
 
 export const GET = handle(app);
 export const POST = handle(app);

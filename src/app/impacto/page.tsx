@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { prisma } from "@/lib/db/prisma";
 import { calcularImpacto } from "@/lib/impacto";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 export const metadata: Metadata = {
   title: "Impacto Ambiental | EcoMed",
@@ -197,6 +198,13 @@ export default async function ImpactoPage() {
             </div>
           </div>
         </section>
+
+        {/* Publicidade */}
+        <div className="bg-white py-6">
+          <div className="container mx-auto max-w-3xl px-4">
+            <AdSlot placement="IMPACT" />
+          </div>
+        </div>
       </main>
       <Footer />
     </>

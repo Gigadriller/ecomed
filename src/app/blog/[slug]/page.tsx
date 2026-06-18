@@ -10,6 +10,7 @@ import { urlFor } from "@/lib/sanity/image";
 import { User, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ArticleReadTracker } from "@/components/blog/ArticleReadTracker";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 // O Header usa auth() que lê cookies — a página deve ser dinâmica (on-demand).
 // Os dados do Sanity ainda são cacheados 1h pelo next.revalidate no fetch.
@@ -258,6 +259,11 @@ export default async function ArticlePage({ params }: Params) {
           <article>
             <PortableText value={article.body} components={portableComponents} />
           </article>
+
+          {/* Publicidade — fim do artigo */}
+          <div className="mt-10">
+            <AdSlot placement="BLOG_ARTICLE" />
+          </div>
 
           {/* FAQ Accordion */}
           {article.faqs && article.faqs.length > 0 && (

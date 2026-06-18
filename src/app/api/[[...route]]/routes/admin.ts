@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { auth } from "@/../auth";
 import { sendEmail } from "@/lib/email";
+import { uploadToR2 } from "@/lib/storage/r2";
+import { AD_FORMATS, AD_PLACEMENTS } from "@/lib/ads";
 
 const app = new Hono();
 
@@ -419,6 +421,122 @@ app.patch(
     return c.json({ ok: true });
   },
 );
+
+// ── Publicidade (Ads) ────────────────────────────────────────────────────────
+
+const adSchema = z.object({
+  advertiser: z.string().min(2).max(120),
+  title: z.string().min(2).max(120),
+  imageUrl: z.string().url(),
+  targetUrl: z.string().url(),
+  placement: z.enum(AD_PLACEMENTS),
+  format: z.enum(AD_FORMATS).default("LEADERBOARD"),
+  targetState: z.string().length(2).optional().nullable(),
+  targetCity: z.string().max(120).optional().nullable(),
+  active: z.boolean().default(true),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional().nullable(),
+  weight: z.coerce.number().int().min(1).max(100).default(1),
+});
+
+// GET /api/admin/ads — lista campanhas com totais de impressões/cliques
+app.get("/ads", async (c) => {
+  const r = await requireAdminSession(c);
+  if (r && typeof r === "object" && "json" in r) return r;
+
+  const campanhas = await prisma.adCampaign.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { events: { select: { impressions: true, clicks: true } } },
+  });
+
+  const data = campanhas.map((ca) => {
+    const impressions = ca.events.reduce((s, e) => s + e.impressions, 0);
+    const clicks = ca.events.reduce((s, e) => s + e.clicks, 0);
+    const { events, ...rest } = ca;
+    void events;
+    return { ...rest, impressions, clicks };
+  });
+
+  return c.json(data);
+});
+
+// POST /api/admin/ads/upload — sobe o criativo no R2, devolve a URL
+app.post("/ads/upload", async (c) => {
+  const r = await requireAdminSession(c);
+  if (r && typeof r === "object" && "json" in r) return r;
+
+  const body = await c.req.parseBody();
+  const file = body["file"];
+  if (!(file instanceof File)) return c.json({ error: "Arquivo ausente." }, 400);
+
+  try {
+    const ext = "webp";
+    const key = `ads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const url = await uploadToR2(file, key);
+    return c.json({ url });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Falha no upload." }, 400);
+  }
+});
+
+// POST /api/admin/ads — cria campanha
+app.post("/ads", zValidator("json", adSchema), async (c) => {
+  const r = await requireAdminSession(c);
+  if (r && typeof r === "object" && "json" in r) return r;
+
+  const d = c.req.valid("json");
+  const campanha = await prisma.adCampaign.create({
+    data: {
+      advertiser: d.advertiser,
+      title: d.title,
+      imageUrl: d.imageUrl,
+      targetUrl: d.targetUrl,
+      placement: d.placement,
+      format: d.format,
+      targetState: d.targetState ?? null,
+      targetCity: d.targetCity ?? null,
+      active: d.active,
+      startsAt: d.startsAt ? new Date(d.startsAt) : undefined,
+      endsAt: d.endsAt ? new Date(d.endsAt) : null,
+      weight: d.weight,
+    },
+  });
+
+  return c.json({ ok: true, id: campanha.id });
+});
+
+// PATCH /api/admin/ads/:id — edita/ativa/desativa
+app.patch(
+  "/ads/:id",
+  zValidator("json", adSchema.partial()),
+  async (c) => {
+    const r = await requireAdminSession(c);
+    if (r && typeof r === "object" && "json" in r) return r;
+
+    const d = c.req.valid("json");
+    await prisma.adCampaign.update({
+      where: { id: c.req.param("id") },
+      data: {
+        ...d,
+        targetState: d.targetState === undefined ? undefined : d.targetState ?? null,
+        targetCity: d.targetCity === undefined ? undefined : d.targetCity ?? null,
+        startsAt: d.startsAt ? new Date(d.startsAt) : undefined,
+        endsAt: d.endsAt === undefined ? undefined : d.endsAt ? new Date(d.endsAt) : null,
+      },
+    });
+
+    return c.json({ ok: true });
+  },
+);
+
+// DELETE /api/admin/ads/:id
+app.delete("/ads/:id", async (c) => {
+  const r = await requireAdminSession(c);
+  if (r && typeof r === "object" && "json" in r) return r;
+
+  await prisma.adCampaign.delete({ where: { id: c.req.param("id") } });
+  return c.json({ ok: true });
+});
 
 export { app as adminRouter };
 
