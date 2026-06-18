@@ -16,6 +16,9 @@ interface AdSlotProps {
   placement: AdPlacement
   city?: string
   state?: string
+  /** Localização do usuário — habilita segmentação por raio (ex.: no mapa). */
+  lat?: number
+  lng?: number
   className?: string
 }
 
@@ -26,7 +29,7 @@ const FORMAT_BOX: Record<AdFormat, { maxWidth: number; ratio: string }> = {
   MOBILE_BANNER: { maxWidth: 320, ratio: "320 / 100" },
 }
 
-export function AdSlot({ placement, city, state, className }: AdSlotProps) {
+export function AdSlot({ placement, city, state, lat, lng, className }: AdSlotProps) {
   const [ad, setAd] = useState<ServedAd | null>(null)
   const [carregou, setCarregou] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,6 +40,11 @@ export function AdSlot({ placement, city, state, className }: AdSlotProps) {
     const params = new URLSearchParams({ placement })
     if (city) params.set("city", city)
     if (state) params.set("state", state)
+    // Arredonda a 3 casas (~110 m): suficiente para o raio, melhor para cache e privacidade.
+    if (typeof lat === "number" && typeof lng === "number") {
+      params.set("lat", lat.toFixed(3))
+      params.set("lng", lng.toFixed(3))
+    }
 
     let cancelado = false
     fetch(`/api/ads/serve?${params.toString()}`)
@@ -54,7 +62,7 @@ export function AdSlot({ placement, city, state, className }: AdSlotProps) {
     return () => {
       cancelado = true
     }
-  }, [placement, city, state])
+  }, [placement, city, state, lat, lng])
 
   // Conta impressão quando o anúncio entra na viewport (1x)
   useEffect(() => {

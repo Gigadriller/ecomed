@@ -138,6 +138,8 @@ export function MapContainer({ initialPoints = [] }: MapContainerProps) {
         point={selectedPoint}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        userLat={coords?.latitude}
+        userLng={coords?.longitude}
       />
     </div>
   );

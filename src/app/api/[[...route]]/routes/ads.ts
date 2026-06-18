@@ -20,12 +20,15 @@ ads.get(
       placement: z.enum(AD_PLACEMENTS),
       city: z.string().optional(),
       state: z.string().optional(),
+      lat: z.coerce.number().min(-90).max(90).optional(),
+      lng: z.coerce.number().min(-180).max(180).optional(),
     }),
   ),
   async (c) => {
-    const { placement, city, state } = c.req.valid("query")
-    const ad = await getActiveAd(placement, { city, state })
+    const { placement, city, state, lat, lng } = c.req.valid("query")
+    const ad = await getActiveAd(placement, { city, state, lat, lng })
     // Cache curto no edge: evita martelar o banco, mas mantém rotação razoável.
+    // Vary implícito pela query (lat/lng arredondados pelo cliente).
     c.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300")
     return c.json({ ad })
   },

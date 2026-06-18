@@ -24,9 +24,11 @@ interface PointDrawerProps {
   point: MapPoint | null;
   open: boolean;
   onClose: () => void;
+  userLat?: number;
+  userLng?: number;
 }
 
-export function PointDrawer({ point, open, onClose }: PointDrawerProps) {
+export function PointDrawer({ point, open, onClose, userLat, userLng }: PointDrawerProps) {
   const [favorited, setFavorited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
@@ -144,8 +146,15 @@ export function PointDrawer({ point, open, onClose }: PointDrawerProps) {
             Reportar problema
           </a>
 
-          {/* Publicidade — banner contextual da cidade */}
-          <AdSlot placement="MAP_LIST" city={point.city} state={point.state} className="pt-2" />
+          {/* Publicidade — banner contextual (cidade + raio hiperlocal se houver GPS) */}
+          <AdSlot
+            placement="MAP_LIST"
+            city={point.city}
+            state={point.state}
+            lat={userLat}
+            lng={userLng}
+            className="pt-2"
+          />
         </div>
       </DrawerContent>
     </Drawer>

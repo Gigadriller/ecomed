@@ -527,6 +527,11 @@ model AdCampaign {
   format      String         @default("LEADERBOARD") // LEADERBOARD | RECTANGLE | MOBILE_BANNER
   targetState String? // segmentação por UF (null = nacional)
   targetCity  String? // segmentação por cidade (null = todas)
+  // Segmentação hiperlocal: exibe só a usuários a até radiusKm do ponto (centerLat/Lng).
+  // Requer a localização do usuário (placement MAP_LIST). Tem prioridade sobre cidade/UF.
+  centerLat   Float?
+  centerLng   Float?
+  radiusKm    Int?
   active      Boolean        @default(true)
   startsAt    DateTime       @default(now())
   endsAt      DateTime? // null = sem data de término

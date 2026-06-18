@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma"
+import { haversineMetros } from "@/lib/geo/haversine"
 
 // Placements válidos onde um banner pode ser exibido.
 // NUNCA incluir fluxos sensíveis (checkin, EcoBot, emergência).
@@ -18,12 +19,21 @@ export interface ServedAd {
 interface ServeOptions {
   city?: string | null
   state?: string | null
+  lat?: number | null
+  lng?: number | null
+}
+
+function toServed(c: { id: string; advertiser: string; imageUrl: string; format: string }): ServedAd {
+  return { id: c.id, advertiser: c.advertiser, imageUrl: c.imageUrl, format: c.format as AdFormat }
 }
 
 /**
  * Seleciona uma campanha ativa para o placement, respeitando vigência e
- * segmentação geográfica. Campanhas com cidade/UF definida têm prioridade
- * sobre as nacionais quando o contexto bate. Escolha final é ponderada por weight.
+ * segmentação. Prioridade de relevância (mais específica primeiro):
+ *   1. Raio hiperlocal — usuário a até radiusKm do ponto (exige lat/lng)
+ *   2. Cidade/UF — campanha geo-segmentada que bate com o contexto
+ *   3. Nacional — sem segmentação
+ * Dentro do nível escolhido, a escolha é ponderada por weight.
  */
 export async function getActiveAd(
   placement: AdPlacement,
@@ -45,46 +55,50 @@ export async function getActiveAd(
       format: true,
       targetCity: true,
       targetState: true,
+      centerLat: true,
+      centerLng: true,
+      radiusKm: true,
       weight: true,
     },
   })
 
   if (candidatas.length === 0) return null
 
-  // Filtra por segmentação: mantém campanhas nacionais (sem cidade/UF) e as que
-  // batem com o contexto. Descarta as segmentadas para outra praça.
   const cidade = opts.city?.trim().toLowerCase() ?? null
   const uf = opts.state?.trim().toUpperCase() ?? null
+  const temCoords = typeof opts.lat === "number" && typeof opts.lng === "number"
 
-  const elegiveis = candidatas.filter((c) => {
-    if (c.targetState && c.targetState.toUpperCase() !== uf) return false
-    if (c.targetCity && c.targetCity.trim().toLowerCase() !== cidade) return false
-    return true
-  })
+  const radio: typeof candidatas = []
+  const geo: typeof candidatas = []
+  const nacional: typeof candidatas = []
 
-  if (elegiveis.length === 0) return null
+  for (const c of candidatas) {
+    // Campanha com raio: só elegível se temos a posição do usuário e ele está dentro.
+    if (c.radiusKm && c.centerLat != null && c.centerLng != null) {
+      if (!temCoords) continue
+      const dist = haversineMetros(opts.lat as number, opts.lng as number, c.centerLat, c.centerLng)
+      if (dist <= c.radiusKm * 1000) radio.push(c)
+      continue
+    }
 
-  // Dá prioridade às campanhas geo-segmentadas (mais relevantes) quando existem.
-  const segmentadas = elegiveis.filter((c) => c.targetCity || c.targetState)
-  const pool = segmentadas.length > 0 ? segmentadas : elegiveis
+    // Campanha geo-segmentada por cidade/UF.
+    if (c.targetState && c.targetState.toUpperCase() !== uf) continue
+    if (c.targetCity && c.targetCity.trim().toLowerCase() !== cidade) continue
+    if (c.targetCity || c.targetState) geo.push(c)
+    else nacional.push(c)
+  }
+
+  const pool = radio.length > 0 ? radio : geo.length > 0 ? geo : nacional
+  if (pool.length === 0) return null
 
   // Seleção ponderada por weight.
   const totalPeso = pool.reduce((s, c) => s + Math.max(1, c.weight), 0)
   let sorteio = Math.random() * totalPeso
   for (const c of pool) {
     sorteio -= Math.max(1, c.weight)
-    if (sorteio <= 0) {
-      return { id: c.id, advertiser: c.advertiser, imageUrl: c.imageUrl, format: c.format as AdFormat }
-    }
+    if (sorteio <= 0) return toServed(c)
   }
-
-  const fallback = pool[0]
-  return {
-    id: fallback.id,
-    advertiser: fallback.advertiser,
-    imageUrl: fallback.imageUrl,
-    format: fallback.format as AdFormat,
-  }
+  return toServed(pool[0])
 }
 
 /** Registra impressão no agregado diário (idempotente por campanha+dia). */

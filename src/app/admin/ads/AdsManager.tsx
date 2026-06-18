@@ -20,6 +20,9 @@ interface Campaign {
   format: string;
   targetState: string | null;
   targetCity: string | null;
+  centerLat: number | null;
+  centerLng: number | null;
+  radiusKm: number | null;
   active: boolean;
   endsAt: string | null;
   weight: number;
@@ -53,6 +56,9 @@ const EMPTY = {
   format: "LEADERBOARD",
   targetState: "",
   targetCity: "",
+  centerLat: "",
+  centerLng: "",
+  radiusKm: "",
   endsAt: "",
   weight: "1",
 };
@@ -102,6 +108,9 @@ export function AdsManager({ initial }: { initial: Campaign[] }) {
         format: form.format,
         targetState: form.targetState || null,
         targetCity: form.targetCity || null,
+        centerLat: form.centerLat ? Number(form.centerLat) : null,
+        centerLng: form.centerLng ? Number(form.centerLng) : null,
+        radiusKm: form.radiusKm ? Number(form.radiusKm) : null,
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
         weight: Number(form.weight) || 1,
       }),
@@ -221,6 +230,29 @@ export function AdsManager({ initial }: { initial: Campaign[] }) {
                 </div>
               </div>
 
+              {/* Raio hiperlocal — só vale no placement "Lista do mapa" (precisa do GPS do usuário) */}
+              <div className="rounded-md border border-dashed p-3 space-y-2">
+                <p className="text-sm font-medium">Raio hiperlocal (opcional)</p>
+                <p className="text-xs text-muted-foreground">
+                  Exibe o banner só a quem estiver a até X km da loja. Funciona apenas no espaço{" "}
+                  <strong>Lista do mapa</strong> (usa o GPS do usuário). Tem prioridade sobre cidade/UF.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="centerLat">Latitude da loja</Label>
+                    <Input id="centerLat" type="number" step="any" value={form.centerLat} onChange={(e) => set("centerLat", e.target.value)} placeholder="-27.0965" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="centerLng">Longitude da loja</Label>
+                    <Input id="centerLng" type="number" step="any" value={form.centerLng} onChange={(e) => set("centerLng", e.target.value)} placeholder="-52.6186" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="radiusKm">Raio (km)</Label>
+                    <Input id="radiusKm" type="number" min={1} max={500} value={form.radiusKm} onChange={(e) => set("radiusKm", e.target.value)} placeholder="10" />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
                 <Button type="submit" disabled={saving || uploading}>
                   {saving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
@@ -254,7 +286,13 @@ export function AdsManager({ initial }: { initial: Campaign[] }) {
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
                       {c.advertiser} · {PLACEMENT_LABEL[c.placement] ?? c.placement}
-                      {c.targetCity ? ` · ${c.targetCity}` : c.targetState ? ` · ${c.targetState}` : " · nacional"}
+                      {c.radiusKm && c.centerLat != null
+                        ? ` · raio ${c.radiusKm} km`
+                        : c.targetCity
+                          ? ` · ${c.targetCity}`
+                          : c.targetState
+                            ? ` · ${c.targetState}`
+                            : " · nacional"}
                     </p>
                   </div>
 
