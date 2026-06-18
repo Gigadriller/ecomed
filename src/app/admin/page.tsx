@@ -2,7 +2,7 @@
 import { requireAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, MapPin, FileText, AlertTriangle, Building2 } from "lucide-react";
+import { Users, MapPin, FileText, AlertTriangle, Building2, Megaphone, Eye, MousePointerClick, Percent } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
@@ -12,13 +12,20 @@ export const metadata: Metadata = { title: "Painel Admin | EcoMed" };
 export default async function AdminPage() {
   await requireAdmin();
 
-  const [users, pendingPoints, approvedPoints, reports, pendingCandidates] = await Promise.all([
-    prisma.user.count(),
-    prisma.point.count({ where: { status: "PENDING" } }),
-    prisma.point.count({ where: { status: "APPROVED" } }),
-    prisma.report.count({ where: { resolved: false } }),
-    prisma.partner.count({ where: { user: { role: "CITIZEN" } } }),
-  ]);
+  const [users, pendingPoints, approvedPoints, reports, pendingCandidates, activeCampaigns, adAgg] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.point.count({ where: { status: "PENDING" } }),
+      prisma.point.count({ where: { status: "APPROVED" } }),
+      prisma.report.count({ where: { resolved: false } }),
+      prisma.partner.count({ where: { user: { role: "CITIZEN" } } }),
+      prisma.adCampaign.count({ where: { active: true } }),
+      prisma.adEventDaily.aggregate({ _sum: { impressions: true, clicks: true } }),
+    ]);
+
+  const adImpressions = adAgg._sum.impressions ?? 0;
+  const adClicks = adAgg._sum.clicks ?? 0;
+  const adCtr = adImpressions > 0 ? ((adClicks / adImpressions) * 100).toFixed(1) : "0.0";
 
   const recentPoints = await prisma.point.findMany({
     where: { status: "PENDING" },
@@ -55,6 +62,39 @@ export default async function AdminPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      {/* Publicidade — métricas das campanhas */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Megaphone className="size-5 text-muted-foreground" />
+            Publicidade
+          </h2>
+          <Link href="/admin/ads" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Gerenciar campanhas
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Campanhas ativas", value: activeCampaigns.toLocaleString("pt-BR"), icon: Megaphone },
+            { label: "Impressões", value: adImpressions.toLocaleString("pt-BR"), icon: Eye },
+            { label: "Cliques", value: adClicks.toLocaleString("pt-BR"), icon: MousePointerClick },
+            { label: "CTR médio", value: `${adCtr}%`, icon: Percent },
+          ].map(({ label, value, icon: Icon }) => (
+            <Link key={label} href="/admin/ads">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+                  <Icon className="size-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{value}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Pontos pendentes */}
